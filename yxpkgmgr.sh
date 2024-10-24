@@ -413,12 +413,14 @@ function write_cfg_key()
 	fi	
 }
 
+
 ##################################################################################################################################################
 ##################################################################################################################################################
 
 function cmd_info()
 {
   local pkg_path=
+  local pkg_pass=
   local tmp_path=
 
   while [ $# -gt 0 ]; do
@@ -427,6 +429,11 @@ function cmd_info()
       --path )
         shift
         pkg_path=$1
+      ;;
+
+      --pkg_pass )
+        shift
+        pkg_pass=$1
       ;;
 
       --tmp-path )
@@ -465,8 +472,17 @@ function cmd_info()
 
 
 
+  # decrypt the package
+  local pass_param=''
+  if [ -n "${pkg_pass}" ]; then
+    pass_param="--pass pass:${pkg_pass}"
+  fi
+  openssl enc -d -aes256 -iter 100 -pbkdf2 -in "${pkg_path}" --out "${tmp_path}/target" ${pass_param}
+  if [ ! $? -eq 0 ]; then
+    echo_fatal "Failed to decrypt package"
+  fi
   # Extract all files to temp directory
-  tar --extract --file="${pkg_path}" --directory="${tmp_path}"
+  tar --extract --file="${tmp_path}/target" --directory="${tmp_path}"
 
 
 
@@ -508,6 +524,7 @@ function cmd_download()
 {
   local tmp_path=
   local pkg_path=
+  local pkg_pass=
   local pkg_name=$1
   local force=false
   if ! [[ "${pkg_name}" =~ ^-.*$ ]]; then
@@ -522,6 +539,11 @@ function cmd_download()
       --path )
         shift
         pkg_path=$1
+      ;;
+
+      --pass )
+        shift
+        pkg_pass=$1
       ;;
 
       --force )
@@ -549,6 +571,7 @@ function cmd_download()
   fi
 
 
+
   echo_info "Download package ${pkg_name}..."
 
   # Create a temp directory
@@ -558,7 +581,7 @@ function cmd_download()
   fi
 
   # # Use apt-get download all deb files
-  sudo apt-get install -y --download-only --option=Dir::Cache::Archives="${tmp_path}" "${pkg_name}"
+  sudo apt-get install -y --reinstall --download-only --option=Dir::Cache::Archives="${tmp_path}" "${pkg_name}"
   #echo "sudo apt-get install -y --download-only --option=Dir::Cache::Archives=${tmp_path} ${pkg_name}"
   if [ ! $? -eq 0 ]; then
     echo_fatal "Failed to download package: ${pkg_name}"
@@ -596,6 +619,8 @@ function cmd_download()
         echo ${file_name%.*} >> ${tmp_path}/list
         # Write file list and hash vallue to config
         write_cfg_key --key ${file_name%.*} --val ${hash_val} --file ${tmp_path}/hash
+        echo "${file_name%.*}"
+        echo "${hash_val}"
         echo "${file_name%.*} ${hash_val}: OK"
       else
         echo_fatal "Failed to compress package: ${file_name}"
@@ -612,6 +637,7 @@ function cmd_download()
   fi
 
 
+  echo_info "Encrypt the package ..."
   # Copy tar file to pkg_path
   if [ ! -d  "${pkg_path}" ]; then
       echo_err "${pkg_path} not exist, try create one"
@@ -633,14 +659,26 @@ function cmd_download()
     fi
   fi
 
-  cp "${tmp_path}/${pkg_name}.tar" "${pkg_path}/${pkg_name}"
-    if [ ! $? -eq 0 ]; then
-    echo_fatal "Failed to copy compressed package ${pkg_path}/${pkg_name}"
+
+  local encrypt_pass_param=''
+  if [ -n "${pkg_pass}" ]; then
+    encrypt_pass_param="--pass pass:${pkg_pass}"
   fi
+
+  openssl enc -e -aes256 -iter 100 -pbkdf2 -in "${tmp_path}/${pkg_name}.tar" -out "${pkg_path}/${pkg_name}" ${encrypt_pass_param}
+  if [ ! $? -eq 0 ]; then
+    echo_fatal "Failed to encrypt package ${pkg_name}"
+  fi
+
 
   # Verify compressed package
   echo_info "Verify package..."
-  cmd_verify --path "${pkg_path}/${pkg_name}"
+  local verify_pass_param=''
+  if [ -n "${pkg_pass}" ]; then
+    verify_pass_param="--pass ${pkg_pass}"
+  fi
+
+  cmd_verify --path "${pkg_path}/${pkg_name}" ${verify_pass_param}
   if [ $? -eq 0 ]; then
     echo 'Done'
   else
@@ -655,6 +693,7 @@ function cmd_verify()
 {
   local pkg_path=
   local tmp_path=
+  local pkg_pass=
   local check_failed=false
 
   while [ $# -gt 0 ]; do
@@ -668,6 +707,11 @@ function cmd_verify()
       --tmp-path )
         shift
         tmp_path=$1
+      ;;
+
+      --pass )
+        shift
+        pkg_pass=$1
       ;;
 
       --help )
@@ -700,9 +744,18 @@ function cmd_verify()
   fi
 
 
-
+  # decrypt the package
+  local pass_param=''
+  if [ -n "${pkg_pass}" ]; then
+    pass_param="--pass pass:${pkg_pass}"
+  fi
+  openssl enc -d -aes256 -iter 100 -pbkdf2 -in "${pkg_path}" --out "${tmp_path}/target" ${pass_param}
+  if [ ! $? -eq 0 ]; then
+    echo_fatal "Failed to decrypt package"
+  fi
   # Extract all files to temp directory
-  tar --extract --file="${pkg_path}" --directory="${tmp_path}"
+  # tar --extract --file="${pkg_path}" --directory="${tmp_path}"
+  tar --extract --file="${tmp_path}/target" --directory="${tmp_path}"
 
 
 
@@ -758,6 +811,7 @@ function cmd_verify()
 function cmd_install()
 {
   local pkg_path=
+  local pkg_pass=
   local tmp_path=
   local check_failed=false
 
@@ -767,6 +821,11 @@ function cmd_install()
       --path )
         shift
         pkg_path=$1
+      ;;
+
+      --pass )
+        shift
+        pkg_pass=$1
       ;;
 
       --tmp-path )
@@ -805,7 +864,11 @@ function cmd_install()
   fi
 
   echo_info "Verify package..."
-  cmd_verify --path ${pkg_path} --tmp-path ${tmp_path}
+  local pass_param=''
+  if [ -n "${pkg_pass}" ]; then
+    pass_param="--pass ${pkg_pass}"
+  fi
+  cmd_verify --path ${pkg_path} --tmp-path ${tmp_path} ${pass_param}
   if [ ! $? -eq 0 ]; then
     echo_fatal "Verify failed. target is invalid"
   fi
