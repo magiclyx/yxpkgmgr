@@ -750,8 +750,6 @@ function cmd_verify()
     fi
   fi
 
-  open ${tmp_path}
-
 
   # decrypt the package
   local pass_param=''
