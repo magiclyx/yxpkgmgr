@@ -786,8 +786,10 @@ function cmd_verify()
       echo "Hash value:"
       while read file_name; do
         local hash_val=$(read_cfg_key --key ${file_name} --file "${tmp_path}/hash")
-        echo "${hash_val} *${file_name}.deb" | shasum -a 256 --check
-        if [ ! $? -eq 0 ]; then
+        echo "${hash_val} *${tmp_path}/${file_name}.deb" | shasum -a 256 --check > /dev/null
+        if [ $? -eq 0 ]; then
+          echo "${file_name}.deb ${hash_val}: OK"
+        else
           check_failed=true
         fi
       done < "${tmp_path}/list"
