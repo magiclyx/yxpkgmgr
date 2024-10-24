@@ -658,7 +658,7 @@ function cmd_download()
         echo_fatal "Failed to remove the old file in ${pkg_path}/${pkg_name}"
       fi
     else
-      echo_fatal "${pkg_path}/${pkg_name} already exist."
+      echo_fatal "Destination file: ${pkg_path}/${pkg_name} already exist. use --force to overwrite the file."
     fi
   fi
 
