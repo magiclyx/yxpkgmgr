@@ -455,6 +455,9 @@ function cmd_info()
   if [ -z ${pkg_path} ]; then
     echo_fatal "Unknown package path. Use --help to show more information"
   fi
+  if [ ! -f ${pkg_path} ]; then
+    echo_fatal "Can not find package file on :${pkg_path}"
+  fi
 
 
   if [ -n "${tmp_path}" ]; then
@@ -728,6 +731,10 @@ function cmd_verify()
   if [ -z ${pkg_path} ]; then
     echo_fatal "Unknown package path. Use --help to show more information"
   fi
+  
+  if [ ! -f ${pkg_path} ]; then
+    echo_fatal "Can not find package file on :${pkg_path}"
+  fi
 
 
   if [ -n "${tmp_path}" ]; then
@@ -851,6 +858,10 @@ function cmd_install()
 
   if [ -z ${pkg_path} ]; then
     echo_fatal "Unknown package path. Use --help to show more information"
+  fi
+
+  if [ ! -f ${pkg_path} ]; then
+    echo_fatal "Can not find package file on :${pkg_path}"
   fi
 
 
