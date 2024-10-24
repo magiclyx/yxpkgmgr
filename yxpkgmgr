@@ -431,7 +431,7 @@ function cmd_info()
         pkg_path=$1
       ;;
 
-      --pkg_pass )
+      --pass )
         shift
         pkg_pass=$1
       ;;
@@ -514,7 +514,7 @@ function cmd_info()
       if [ -z "${hash_val}" ]; then
         hash_val='<empty>'
       fi
-      echo "${file_name}.deb    ${hash_val}"
+      echo "${file_name}.deb ${hash_val}"
     done < "${tmp_path}/list"
   fi
 
@@ -742,6 +742,8 @@ function cmd_verify()
       echo_fatal "Failed to create a temp directory"
     fi
   fi
+
+  open ${tmp_path}
 
 
   # decrypt the package
