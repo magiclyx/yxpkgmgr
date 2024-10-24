@@ -1,30 +1,16 @@
 #!/bin/bash
 
 # /var/cache/apt/archives
-#
-# sudo apt-get -o Dir::State::Lists="http://path.to/your/sources.list" install some-package
-# shasum -a 256 FILE
-# #################################################################################################################################################
-# echo "e67643b4f7af2e3f908da9140dcd3d3cdcd64dc6b2529bc63a907bf9c881ea8c *ncurses-term_6.3-2ubuntu0.1_all.deb" | shasum -a 256 --check
-# echo "5d78dcd3f21d0caf86a35347beb2f963cc0f38160c995cda4552dafca598db5f *openssh-client_1%3a8.9p1-3ubuntu0.10_amd64.deb" | shasum -a 256 --check
-# echo "daa8f05c0ab78d421ead44f476f68fa1318ed245e53edabff53caa99af05df69 *openssh-server_1%3a8.9p1-3ubuntu0.10_amd64.deb" | shasum -a 256 --check
-# echo "32e8deeeab960a08cf7dbdabf88b9c8b73afbe2a2831d1aa776d2c7dcdff4eed *openssh-sftp-server_1%3a8.9p1-3ubuntu0.10_amd64.deb" | shasum -a 256 --check
-# echo "245ebcce7417b587f06c38dbdc103e445334b93766aaa05594dd5ba09be142f7 *ssh-import-id_5.11-0ubuntu1_all.deb" | shasum -a 256 --check
 
+CMD=$(basename $0)
 YX_DATE_DEFAULT_TIMEFMT="%Y-%m-%d %H:%M:%S"
-
-declare -A PACKAGE_LIST
-PACKAGE_LIST=(
-    [ncurses-term_6.3-2ubuntu0.1_all]='e67643b4f7af2e3f908da9140dcd3d3cdcd64dc6b2529bc63a907bf9c881ea8c'
-    [openssh-client_1%3a8.9p1-3ubuntu0.10_amd64]='5d78dcd3f21d0caf86a35347beb2f963cc0f38160c995cda4552dafca598db5f'
-    [openssh-server_1%3a8.9p1-3ubuntu0.10_amd64]='daa8f05c0ab78d421ead44f476f68fa1318ed245e53edabff53caa99af05df69'
-    [openssh-sftp-server_1%3a8.9p1-3ubuntu0.10_amd64]='32e8deeeab960a08cf7dbdabf88b9c8b73afbe2a2831d1aa776d2c7dcdff4eed'
-    [ssh-import-id_5.11-0ubuntu1_all]='245ebcce7417b587f06c38dbdc103e445334b93766aaa05594dd5ba09be142f7'
-)
-
-
 PACKAGE_PATH=$(pwd)
 
+APT_GET='/usr/bin/apt-get'
+DPKG='/usr/bin/dpkg'
+OPENSSL='/usr/bin/openssl'
+TAR='/usr/bin/tar'
+CP='/usr/bin/cp'
 ##################################################################################################################################################
 ##################################################################################################################################################
 
@@ -480,12 +466,12 @@ function cmd_info()
   if [ -n "${pkg_pass}" ]; then
     pass_param="--pass pass:${pkg_pass}"
   fi
-  openssl enc -d -aes256 -iter 100 -pbkdf2 -in "${pkg_path}" --out "${tmp_path}/target" ${pass_param}
+  ${OPENSSL} enc -d -aes256 -iter 100 -pbkdf2 -in "${pkg_path}" --out "${tmp_path}/target" ${pass_param}
   if [ ! $? -eq 0 ]; then
     echo_fatal "Failed to decrypt package"
   fi
   # Extract all files to temp directory
-  tar --extract --file="${tmp_path}/target" --directory="${tmp_path}"
+  ${TAR} --extract --file="${tmp_path}/target" --directory="${tmp_path}"
 
 
 
@@ -580,7 +566,7 @@ function cmd_download()
   fi
 
   # # Use apt-get download all deb files
-  sudo apt-get install -y --reinstall --download-only --option=Dir::Cache::Archives="${tmp_path}" "${pkg_name}" ${additional}
+  sudo ${APT_GET} install -y --reinstall --download-only --option=Dir::Cache::Archives="${tmp_path}" "${pkg_name}" ${additional}
   #echo "sudo apt-get install -y --download-only --option=Dir::Cache::Archives=${tmp_path} ${pkg_name}"
   if [ ! $? -eq 0 ]; then
     echo_fatal "Failed to download package: ${pkg_name}"
@@ -599,7 +585,7 @@ function cmd_download()
   local timestamp=$(yx_date_timestamp)
   write_cfg_key --key 'timestamp' --val "${timestamp}" --file "${tmp_path}/info.conf"
 
-  tar --create --absolute-names --file="${tmp_path}/${pkg_name}.tar" -C "${tmp_path}" "info.conf"
+  ${TAR} --create --absolute-names --file="${tmp_path}/${pkg_name}.tar" -C "${tmp_path}" "info.conf"
   if [ ! $? -eq 0 ]; then
     echo_fatal "Failed to create compresse package"
   fi
@@ -612,7 +598,7 @@ function cmd_download()
 
     if [[ -n "${file_name%.*}" ]] && [[ -n "${hash_val}" ]]; then
       # Append deb files
-      tar --append --absolute-names --file="${tmp_path}/${pkg_name}.tar" -C "${tmp_path}" "${file_name}"
+      ${TAR} --append --absolute-names --file="${tmp_path}/${pkg_name}.tar" -C "${tmp_path}" "${file_name}"
       if [ $? -eq 0 ]; then
         # Append filename to list
         echo ${file_name%.*} >> ${tmp_path}/list
@@ -628,9 +614,9 @@ function cmd_download()
   done
 
   # Append list file to tar
-  tar --append --absolute-names --file="${tmp_path}/${pkg_name}.tar" -C "${tmp_path}" "list"
+  ${TAR} --append --absolute-names --file="${tmp_path}/${pkg_name}.tar" -C "${tmp_path}" "list"
   # Append config file to tar
-  tar --append --absolute-names --file="${tmp_path}/${pkg_name}.tar" -C "${tmp_path}" "hash"
+  ${TAR} --append --absolute-names --file="${tmp_path}/${pkg_name}.tar" -C "${tmp_path}" "hash"
   if [ ! $? -eq 0 ]; then
     echo_fatal "Failed to create compresse info.conf"
   fi
@@ -664,7 +650,7 @@ function cmd_download()
     encrypt_pass_param="--pass pass:${pkg_pass}"
   fi
 
-  openssl enc -e -aes256 -iter 100 -pbkdf2 -in "${tmp_path}/${pkg_name}.tar" -out "${pkg_path}/${pkg_name}" ${encrypt_pass_param}
+  ${OPENSSL} enc -e -aes256 -iter 100 -pbkdf2 -in "${tmp_path}/${pkg_name}.tar" -out "${pkg_path}/${pkg_name}" ${encrypt_pass_param}
   if [ ! $? -eq 0 ]; then
     echo_fatal "Failed to encrypt package ${pkg_name}"
   fi
@@ -752,13 +738,13 @@ function cmd_verify()
   if [ -n "${pkg_pass}" ]; then
     pass_param="--pass pass:${pkg_pass}"
   fi
-  openssl enc -d -aes256 -iter 100 -pbkdf2 -in "${pkg_path}" --out "${tmp_path}/target" ${pass_param}
+  ${OPENSSL} enc -d -aes256 -iter 100 -pbkdf2 -in "${pkg_path}" --out "${tmp_path}/target" ${pass_param}
   if [ ! $? -eq 0 ]; then
     echo_fatal "Failed to decrypt package"
   fi
   # Extract all files to temp directory
   # tar --extract --file="${pkg_path}" --directory="${tmp_path}"
-  tar --extract --file="${tmp_path}/target" --directory="${tmp_path}"
+  ${TAR} --extract --file="${tmp_path}/target" --directory="${tmp_path}"
 
 
 
@@ -908,21 +894,21 @@ function cmd_install()
 
   if [ -f "${tmp_path}/list" ]; then
     while read file_name; do
-      cp "${tmp_path}/${file_name}.deb" "${install_path}/${file_name}.deb"
+      ${CP} "${tmp_path}/${file_name}.deb" "${install_path}/${file_name}.deb"
       if [ ! $? -eq 0 ]; then
         echo_fatal "Failed to copy deb file: ${file_name}"
       fi
     done < "${tmp_path}/list"
   fi
 
-  sudo dpkg -i ${install_path}/*.deb
+  sudo ${DPKG} -i ${install_path}/*.deb
   if [ ! $? -eq 0 ]; then
       echo_fatal 'Failed to install package'
   fi
 
 
   echo_info "Install ${pkg_name} ..."
-  sudo apt-get install --option=Dir::Cache::Archives="${install_path}" "${pkg_name}" ${additional}
+  sudo ${APT_GET} install --option=Dir::Cache::Archives="${install_path}" "${pkg_name}" ${additional}
   if [ ! $? -eq 0 ]; then
     echo_fatal "Failed to install ${pkg_nmae}"
   fi

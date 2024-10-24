@@ -6,7 +6,7 @@ echo '==========================================================================
 ./yxpkgmgr verify --path '/home/emanon/Desktop/tmp/openssh-server' --pass test
 
 echo '===================================================================================================='
-./yxpkgmgr info --path '/home/emanon/Desktop/tmp/openssh-server'
+./yxpkgmgr info --path '/home/emanon/Desktop/tmp/openssh-server' --pass test
 
 echo '===================================================================================================='
 ./yxpkgmgr install --path '/home/emanon/Desktop/tmp/openssh-server' --pass test
