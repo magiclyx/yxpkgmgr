@@ -407,7 +407,7 @@ function usage()
 {
 cat <<EOF
   usage: ${CMD} <sub-command> <optional>
-  For handling Linux packages. It's a apt-get wrapper
+  For handling Linux packages. 
 
   usage: ${CMD} <--help|-h> 
   For this help information.
