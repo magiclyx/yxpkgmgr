@@ -403,6 +403,119 @@ function write_cfg_key()
 ##################################################################################################################################################
 ##################################################################################################################################################
 
+function usage()
+{
+cat <<EOF
+  usage: ${CMD} <sub-command> <optional>
+  For handling Linux packages. It's a apt-get wrapper
+
+  usage: ${CMD} <--help|-h> 
+  For this help information.
+
+  usage: ${CMD} <sub-command> <--help|-h>
+  For detail information for sub-command
+
+  The following sub-command are allowed:
+  download:    Download one or more deb files, and package these files to one encrypt filel.
+  install:     Install the specific package.
+  verify:      Check a package.
+  info:        Show the information of a package.
+  help:        Show this help information.
+
+EOF
+}
+
+function usage_download()
+{
+cat <<EOF
+  usage: ${CMD} downlload <package> <--path xxx> [--pass xxx | --force]
+  Download the package deb files and all its dependency, then compress and encrypt these files to one package.
+
+  usage: ${CMD} downlload --help
+  Show this help information.
+
+  The followint option are availiable:
+  --path    The path to storage the destination package.
+  --pass    A password for encrypt.
+  --force   If an existing destination file, remove it and try again.
+  --help    Show this help information.
+EOF
+}
+
+function usage_install()
+{
+cat <<EOF
+  usage: ${CMD} install <--path xxx> [--pass xxx | --tmp-path xxx]
+  Install a specific package.
+
+  usage: ${CMD} downlload --help
+  Show this help information.
+
+  The followint option are availiable:
+  --path       The package path.
+  --tmp-path   Indicate a directory to storage mid files. for debugging.
+  --pass       A password for encrypt.
+  --help       Show this help information.
+
+  Other option:
+  All additional optional will pass to apt-get command.
+EOF
+}
+
+function usage_install()
+{
+cat <<EOF
+  usage: ${CMD} install <--path xxx> [--pass xxx | --tmp-path xxx]
+  Install a specific package.
+
+  usage: ${CMD} install --help
+  Show this help information.
+
+  The followint option are availiable:
+  --path       The package path.
+  --tmp-path   Indicate a directory to storage mid files. for debugging.
+  --pass       A password for encrypt.
+  --help       Show this help information.
+
+  Other option:
+  All additional optional will pass to apt-get command.
+EOF
+}
+
+function usage_verify()
+{
+cat <<EOF
+  usage: ${CMD} verify <--path xxx> [--pass xxx | --tmp-path xxx]
+  Verify a package.
+
+  usage: ${CMD} verify --help
+  Show this help information.
+
+  The followint option are availiable:
+  --path       The package path.
+  --tmp-path   Indicate a directory to storage mid files. for debugging.
+  --pass       A password for encrypt.
+  --help       Show this help information.
+EOF
+}
+
+function usage_info()
+{
+cat <<EOF
+  usage: ${CMD} info <--path xxx> [--pass xxx | --tmp-path xxx]
+  Show all information of a package.
+
+  usage: ${CMD} info --help
+  Show this help information.
+
+  The followint option are availiable:
+  --path       The package path.
+  --tmp-path   Indicate a directory to storage mid files. for debugging.
+  --pass       A password for encrypt.
+  --help       Show this help information.
+EOF
+}
+
 function cmd_info()
 {
   local pkg_path=
@@ -428,11 +541,12 @@ function cmd_info()
       ;;
 
       --help )
-        show_help=true
+        usage_info
+        exit 0
       ;;
 
       *)
-        show_help=true
+        echo_fatal "Unknown params $1. Use '${CMD} info --help' to show help information"
       ;;
 		esac
 		shift
@@ -536,7 +650,8 @@ function cmd_download()
       ;;
 
       --help )
-        show_help=true
+        usage_download
+        exit 0
       ;;
 
       *)
@@ -700,11 +815,12 @@ function cmd_verify()
       ;;
 
       --help )
-        show_help=true
+        usage_verify
+        exit 0
       ;;
 
       *)
-        show_help=true
+        echo_fatal "Unknown params $1. Use '${CMD} verify --help' to show help information"
       ;;
 		esac
 		shift
@@ -825,7 +941,8 @@ function cmd_install()
       ;;
 
       --help )
-        show_help=true
+        usage_install
+        exit 0
       ;;
 
       *)
@@ -932,6 +1049,8 @@ elif [[ ${sub_cmd} == "verify" ]]; then
   cmd_verify $@
 elif [[ ${sub_cmd} == "info" ]]; then
   cmd_info $@
+elif [[ ${sub_cmd} == "--help" ]] || [[ ${sub_cmd} == '-h' ]]; then
+  usage
 else
   echo_fatal "Unknown sub command:'${sub_cmd}'. Use '${CMD} --help' to show document"
 fi
