@@ -670,6 +670,24 @@ function cmd_download()
     echo_fatal "Unknown download path. Use --help to show more information"
   fi
 
+  if [ -z "${pkg_pass}" ]; then
+    local pass1=
+    local pass2=
+    echo -n "Enter encryption password:"
+    read -s pass1
+    echo ""
+
+    echo -n "Verifying encryption password:"
+    read -s pass2
+    echo ""
+
+    if [[ "${pass1}" == "${pass2}" ]]; then
+      pkg_pass="${pass1}"
+    else
+      echo_fatal "Password not matched"
+    fi
+  fi
+
 
 
   echo_info "Download package ${pkg_name}..."
@@ -1038,7 +1056,7 @@ function cmd_install()
 sub_cmd=$1
 shift
 if [[ -z ${sub_cmd} ]]; then
-  echo_fatal "param error. use '${CMD} --help' to show document"
+  echo_fatal "Param error. use '${CMD} --help' to show document"
 fi
 
 if [[ ${sub_cmd} == "download" ]]; then
