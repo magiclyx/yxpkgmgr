@@ -446,7 +446,7 @@ function cmd_info()
       ;;
 
       *)
-        additional="${additional} $1"
+        show_help=true
       ;;
 		esac
 		shift
@@ -504,10 +504,6 @@ function cmd_info()
   else
     echo "Created: <unknown>"
   fi
-  # timestamp
-  # timestamp=$(date '+%s')
-  # date -d @${timestamp}
-  # date -d @${timestamp} "+%Y-%m-%d %H:%M:%S"
 
 
   # check hash value
@@ -584,7 +580,7 @@ function cmd_download()
   fi
 
   # # Use apt-get download all deb files
-  sudo apt-get install -y --reinstall --download-only --option=Dir::Cache::Archives="${tmp_path}" "${pkg_name}"
+  sudo apt-get install -y --reinstall --download-only --option=Dir::Cache::Archives="${tmp_path}" "${pkg_name}" ${additional}
   #echo "sudo apt-get install -y --download-only --option=Dir::Cache::Archives=${tmp_path} ${pkg_name}"
   if [ ! $? -eq 0 ]; then
     echo_fatal "Failed to download package: ${pkg_name}"
@@ -722,7 +718,7 @@ function cmd_verify()
       ;;
 
       *)
-        additional="${additional} $1"
+        show_help=true
       ;;
 		esac
 		shift
@@ -926,7 +922,7 @@ function cmd_install()
 
 
   echo_info "Install ${pkg_name} ..."
-  sudo apt-get install --option=Dir::Cache::Archives="${install_path}" "${pkg_name}"
+  sudo apt-get install --option=Dir::Cache::Archives="${install_path}" "${pkg_name}" ${additional}
   if [ ! $? -eq 0 ]; then
     echo_fatal "Failed to install ${pkg_nmae}"
   fi
