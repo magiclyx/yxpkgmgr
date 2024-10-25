@@ -626,6 +626,8 @@ function cmd_download()
   local pkg_pass=
   local pkg_name=$1
   local force=false
+  local tmp_path=
+
   if ! [[ "${pkg_name}" =~ ^-.*$ ]]; then
     shift
   else
@@ -638,6 +640,11 @@ function cmd_download()
       --path )
         shift
         pkg_path=$1
+      ;;
+
+      --tmp-path )
+        shift
+        tmp_path=$1
       ;;
 
       --pass )
@@ -692,10 +699,17 @@ function cmd_download()
 
   echo_info "Download package ${pkg_name}..."
 
-  # Create a temp directory
-  tmp_path=$(mktemp --directory)
-  if [ ! -d "${tmp_path}" ]; then
-    echo_fatal "Failed to create a temp directory"
+  if [ -n "${tmp_path}" ]; then
+    # Test temp directory
+    if [ ! -d "${tmp_path}" ]; then
+      echo_fatal "${tmp_path} not exist."
+    fi
+  else
+    # Create a temp directory
+    tmp_path=$(mktemp --directory)
+    if [ ! -d "${tmp_path}" ]; then
+      echo_fatal "Failed to create a temp directory"
+    fi
   fi
 
   # # Use apt-get download all deb files
