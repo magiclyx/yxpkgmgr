@@ -11,6 +11,8 @@ DPKG='/usr/bin/dpkg'
 OPENSSL='/usr/bin/openssl'
 TAR='/usr/bin/tar'
 CP='/usr/bin/cp'
+CHOWN='/usr/bin/chown'
+CHMOD='/usr/bin/chmod'
 ##################################################################################################################################################
 ##################################################################################################################################################
 
@@ -716,6 +718,14 @@ function cmd_download()
       echo_fatal "Failed to create a temp directory"
     fi
   fi
+
+
+  # Set permission for _apt user
+  if awk -F':' '{print $1}' '/etc/passwd' | grep -q _apt; then
+    sudo ${CHOWN} -R _apt:root "${tmp_path}"
+    sudo ${CHMOD} -R 700 "${tmp_path}"
+  fi
+  
 
   # # Use apt-get download all deb files
   sudo ${APT_GET} install -y --reinstall --download-only --option=Dir::Cache::Archives="${tmp_path}" "${pkg_name}" ${additional}
